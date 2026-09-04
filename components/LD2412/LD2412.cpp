@@ -106,7 +106,7 @@ void LD2412Component::read_all_info() {
   this->set_config_mode_(false);
 #ifdef USE_SELECT
   const auto baud_rate = std::to_string(this->parent_->get_baud_rate());
-  if (this->baud_rate_select_ != nullptr && this->baud_rate_select_->state != baud_rate) {
+  if (this->baud_rate_select_ != nullptr && this->baud_rate_select_->current_option() != baud_rate) {
     this->baud_rate_select_->publish_state(baud_rate);
   }
 #endif
@@ -178,10 +178,10 @@ void LD2412Component::handle_periodic_data_(uint8_t *buffer, int len) {
   bool engineering_mode = buffer[DATA_TYPES] == 0x01;
 #ifdef USE_SELECT
   if (this->mode_select_ != nullptr) {
-    if(this->mode_select_->state == "Engineering" && !engineering_mode){
+    if(this->mode_select_->current_option() == "Engineering" && !engineering_mode){
       this->mode_select_->publish_state("Normal");
     }
-    if(this->mode_select_->state == "Normal" && engineering_mode){
+    if(this->mode_select_->current_option() == "Normal" && engineering_mode){
       this->mode_select_->publish_state("Engineering");
     }
   }
@@ -397,7 +397,7 @@ bool LD2412Component::handle_ack_data_(uint8_t *buffer, int len) {
       ESP_LOGV(TAG, "Handled baud rate change command");
 #ifdef USE_SELECT
       if (this->baud_rate_select_ != nullptr) {
-        ESP_LOGE(TAG, "Change baud rate component config to %s and reinstall", this->baud_rate_select_->state.c_str());
+        ESP_LOGE(TAG, "Change baud rate component config to %s and reinstall", this->baud_rate_select_->current_option().c_str());
       }
 #endif
       break;
@@ -416,7 +416,7 @@ bool LD2412Component::handle_ack_data_(uint8_t *buffer, int len) {
       ESP_LOGV(TAG, "Distance resolution is: %s", const_cast<char *>(distance_resolution.c_str()));
 #ifdef USE_SELECT
       if (this->distance_resolution_select_ != nullptr &&
-          this->distance_resolution_select_->state != distance_resolution) {
+          this->distance_resolution_select_->current_option() != distance_resolution) {
         this->distance_resolution_select_->publish_state(distance_resolution);
       }
 #endif
@@ -536,7 +536,7 @@ bool LD2412Component::handle_ack_data_(uint8_t *buffer, int len) {
       */
       this->out_pin_level_ = OUT_PIN_LEVEL_INT_TO_ENUM.at(buffer[14]);
 #ifdef USE_SELECT
-      if (this->out_pin_level_select_ != nullptr && this->out_pin_level_select_->state != this->out_pin_level_) {
+      if (this->out_pin_level_select_ != nullptr && this->out_pin_level_select_->current_option() != this->out_pin_level_) {
         this->out_pin_level_select_->publish_state(this->out_pin_level_);
       }
 #endif
@@ -731,7 +731,7 @@ void LD2412Component::set_basic_config() {
     lowbyte(static_cast<int>(this->max_distance_gate_number_->state)+1),
     lowbyte(static_cast<int>(this->timeout_number_->state)),
     highbyte(static_cast<int>(this->timeout_number_->state)),
-    OUT_PIN_LEVEL_ENUM_TO_INT.at(this->out_pin_level_select_->state)
+    OUT_PIN_LEVEL_ENUM_TO_INT.at(this->out_pin_level_select_->current_option().str())
   };
   // int max_moving_distance_gate_range = static_cast<int>(this->max_move_distance_gate_number_->state);
   // int max_still_distance_gate_range = static_cast<int>(this->max_still_distance_gate_number_->state);
@@ -807,7 +807,7 @@ void LD2412Component::set_light_out_control() {
 //     this->light_function_ = this->light_function_select_->state;
 //   }
   if (this->out_pin_level_select_ != nullptr && this->out_pin_level_select_->has_state()) {
-    this->out_pin_level_ = this->out_pin_level_select_->state;
+    this->out_pin_level_ = this->out_pin_level_select_->current_option().str();
   }
 #endif
   if (this->light_function_.empty() || this->out_pin_level_.empty() || this->light_threshold_ < 0) {
